@@ -19,7 +19,7 @@ describe('routes : index', () => {
           res.status.should.eql(200);
           res.type.should.eql('application/json');
           res.body.status.should.equal('success');
-          res.body.message.should.eql('hello, world!');
+          res.body.message.should.eql('not a real webpage');
           done();
         });
     });
