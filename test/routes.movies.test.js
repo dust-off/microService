@@ -7,6 +7,8 @@ const should = chai.should();
 
 chai.use(chaiHttp);
 
+const BASE_URL = '/api/v1/movies';
+
 const server = require('../src/server/index');
 const knex = require('../src/server/db/connection');
 
@@ -30,12 +32,12 @@ describe('routes : movies', () => {
 
   afterEach(() => knex.migrate.rollback());
 
-  describe('GET /api/v1/movies', () => {
+  describe('GET /api/v1/movies/all', () => {
     it('should return all movies', (done) => {
       getRandomEntry('movies')
         .then(({ movie, count }) => {
           chai.request(server)
-            .get('/api/v1/movies')
+            .get(`${BASE_URL}/all`)
             .end((err, res) => {
               should.not.exist(err);
               // there should be a 200 status code
@@ -59,7 +61,7 @@ describe('routes : movies', () => {
   describe('GET /api/v1/movies/:id', () => {
     it('should respond with a single movie', (done) => {
       chai.request(server)
-        .get('/api/v1/movies/1')
+        .get(`${BASE_URL}/1`)
         .end((err, res) => {
           // there should be no errors
           should.not.exist(err);
@@ -78,7 +80,7 @@ describe('routes : movies', () => {
     });
     it('should respond with missing movie', (done) => {
       chai.request(server)
-        .get('/api/v1/movies/99999')
+        .get(`${BASE_URL}/99999`)
         .end((err, res) => {
           should.exist(err);
           res.status.should.equal(404);
@@ -92,7 +94,7 @@ describe('routes : movies', () => {
   describe('POST /api/v1/movies/', () => {
     it('should insert a movie into the db', (done) => {
       chai.request(server)
-        .post('/api/v1/movies')
+        .post(`${BASE_URL}`)
         .send({
           title: 'Titanic 2',
           genre: JSON.stringify(['dramas', 'international', 'action']),
@@ -112,7 +114,7 @@ describe('routes : movies', () => {
     });
     it('should throw an error if the payload is malformed', (done) => {
       chai.request(server)
-        .post('/api/v1/movies')
+        .post(`${BASE_URL}`)
         .send({
           name: 'Titanic',
         })
@@ -139,7 +141,7 @@ describe('routes : movies', () => {
             newRating = 1;
           }
           chai.request(server)
-            .put(`/api/v1/movies/${movieObject.id}`)
+            .put(`${BASE_URL}/${movieObject.id}`)
           // update the popularity by subtracting 1
             .send({
               popularity: newRating,
@@ -159,7 +161,7 @@ describe('routes : movies', () => {
     });
     it('should throw an error if the movie does not exist', (done) => {
       chai.request(server)
-        .put('/api/v1/movies/9999999')
+        .put(`${BASE_URL}/9999999`)
         .send({
           popularity: 9,
         })
@@ -180,7 +182,7 @@ describe('routes : movies', () => {
           const movieObject = movie[0];
           const lengthBeforeDelete = count;
           chai.request(server)
-            .delete(`/api/v1/movies/${movieObject.id}`)
+            .delete(`${BASE_URL}/${movieObject.id}`)
             .end((err, res) => {
               should.not.exist(err);
               res.status.should.equal(200);
@@ -197,7 +199,7 @@ describe('routes : movies', () => {
     });
     it('should throw an error if the movie does not exist', (done) => {
       chai.request(server)
-        .delete('/api/v1/movies/9999999')
+        .delete(`${BASE_URL}/9999999`)
         .end((err, res) => {
           should.exist(err);
           res.status.should.equal(404);
@@ -208,15 +210,27 @@ describe('routes : movies', () => {
         });
     });
   });
-  describe('GET-search /api/v1/movies/:title', () => {
+  describe('GET-search /api/v1/movies/search/:title', () => {
     it('should return an array of results', (done) => {
       chai.request(server)
-        .get('/api/v1/movies/some')
+        .get(`${BASE_URL}/search/age`)
         .end((err, res) => {
           should.not.exist(err);
           res.status.should.equal(200);
           res.body.status.should.eql('success');
           res.body.data[0].should.include.keys('id', 'title', 'genre', 'time', 'licensing', 'original', 'popularity');
+          res.body.data.length.should.equal(1);
+          done();
+        });
+    });
+    it('should return an error if no movie is found', (done) => {
+      chai.request(server)
+        .get(`${BASE_URL}/search/zzzz`)
+        .end((err, res) => {
+          should.exist(err);
+          res.status.should.equal(404);
+          res.type.should.equal('application/json');
+          res.body.message.should.eql('That movie does not exist.');
           done();
         });
     });

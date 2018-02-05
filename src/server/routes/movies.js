@@ -4,7 +4,7 @@ const queries = require('../db/queries/movies');
 const router = new Router();
 const BASE_URL = '/api/v1/movies';
 
-router.get(BASE_URL, async (ctx) => {
+router.get(`${BASE_URL}/all`, async (ctx) => {
   try {
     const movies = await queries.getAllMovies();
     ctx.body = {
@@ -16,23 +16,40 @@ router.get(BASE_URL, async (ctx) => {
   }
 });
 
+const dbError = (ctx) => {
+  ctx.status = 404;
+  ctx.body = {
+    status: 'error',
+    message: 'That movie does not exist.',
+  };
+};
+
+const sendMovie = (ctx, movie) => {
+  ctx.status = 200;
+  ctx.body = {
+    status: 'success',
+    data: movie,
+  };
+};
+
+const serverError = (ctx, err) => {
+  ctx.status = 400;
+  ctx.body = {
+    status: 'error',
+    message: err.message || 'Sorry, an error has occurred.',
+  };
+};
+
 router.get(`${BASE_URL}/:id`, async (ctx) => {
   try {
     const movie = await queries.getSingleMovie(ctx.params.id);
     if (movie.length) {
-      ctx.body = {
-        status: 'success',
-        data: movie,
-      };
+      sendMovie(ctx, movie);
     } else {
-      ctx.status = 404;
-      ctx.body = {
-        status: 'error',
-        message: 'That movie does not exist.',
-      };
+      dbError(ctx);
     }
   } catch (err) {
-    console.log(err);
+    serverError(ctx, err);
   }
 });
 
@@ -53,11 +70,7 @@ router.post(`${BASE_URL}`, async (ctx) => {
       };
     }
   } catch (err) {
-    ctx.status = 400;
-    ctx.body = {
-      status: 'error',
-      message: err.message || 'Sorry, an error has occurred.',
-    };
+    serverError(ctx, err);
   }
 });
 
@@ -65,24 +78,12 @@ router.put(`${BASE_URL}/:id`, async (ctx) => {
   try {
     const movie = await queries.updateMovie(ctx.params.id, ctx.request.body);
     if (movie.length) {
-      ctx.status = 200;
-      ctx.body = {
-        status: 'success',
-        data: movie,
-      };
+      sendMovie(ctx, movie);
     } else {
-      ctx.status = 404;
-      ctx.body = {
-        status: 'error',
-        message: 'That movie does not exist.',
-      };
+      dbError(ctx);
     }
   } catch (err) {
-    ctx.status = 400;
-    ctx.body = {
-      status: 'error',
-      message: err.message || 'Sorry, an error has occurred.',
-    };
+    serverError(ctx, err);
   }
 });
 
@@ -90,24 +91,25 @@ router.delete(`${BASE_URL}/:id`, async (ctx) => {
   try {
     const movie = await queries.removeMovie(ctx.params.id);
     if (movie.length) {
-      ctx.status = 200;
-      ctx.body = {
-        status: 'success',
-        data: movie,
-      };
+      sendMovie(ctx, movie);
     } else {
-      ctx.status = 404;
-      ctx.body = {
-        status: 'error',
-        message: 'That movie does not exist.',
-      };
+      dbError(ctx);
     }
   } catch (err) {
-    ctx.status = 400;
-    ctx.body = {
-      status: 'error',
-      message: err.message || 'Sorry, an error has occurred.',
-    };
+    serverError(ctx, err);
+  }
+});
+
+router.get(`${BASE_URL}/search/:title`, async (ctx) => {
+  try {
+    const movie = await queries.searchMovie(ctx.params.title);
+    if (movie.length) {
+      sendMovie(ctx, movie);
+    } else {
+      dbError(ctx);
+    }
+  } catch (err) {
+    serverError(ctx, err);
   }
 });
 
