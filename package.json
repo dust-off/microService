@@ -1,0 +1,34 @@
+{
+  "name": "node-koa-api",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./src/server/index.js",
+    "test": "./node_modules/mocha/bin/_mocha"
+  },
+  "keywords": [],
+  "author": "Michael Herman",
+  "license": "ISC",
+  "devDependencies": {
+    "chai": "4.1.1",
+    "chai-http": "^3.0.0",
+    "eslint": "^4.17.0",
+    "eslint-config-airbnb": "^16.1.0",
+    "eslint-plugin-import": "^2.8.0",
+    "eslint-plugin-jsx-a11y": "^6.0.3",
+    "eslint-plugin-react": "^7.6.1",
+    "mocha": "3.5.0"
+  },
+  "dependencies": {
+    "babel-eslint": "^8.2.1",
+    "csv-stringify": "^2.0.1",
+    "faker": "^4.1.0",
+    "knex": "^0.14.2",
+    "koa": "^2.4.1",
+    "koa-bodyparser": "^4.2.0",
+    "koa-router": "^7.4.0",
+    "pg": "^7.4.1",
+    "redis": "^2.8.0",
+    "redis-scanner": "^0.1.1"
+  }
+}
