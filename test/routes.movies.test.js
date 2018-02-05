@@ -1,10 +1,9 @@
 process.env.NODE_ENV = 'test';
 
 const chai = require('chai');
+const chaiHttp = require('chai-http');
 
 const should = chai.should();
-
-const chaiHttp = require('chai-http');
 
 chai.use(chaiHttp);
 
@@ -20,7 +19,7 @@ const getRandomEntry = dbTitle => new Promise((resolve) => {
       knex('movies')
       // get a random movie based on the count
         .where('id', getRandomInt(1, count - 1))
-        .then(movie => resolve(movie, count));
+        .then(movie => resolve({ movie, count }));
     });
 });
 
@@ -33,25 +32,27 @@ describe('routes : movies', () => {
 
   describe('GET /api/v1/movies', () => {
     it('should return all movies', (done) => {
-      chai.request(server)
-        .get('/api/v1/movies')
-        .end((err, res) => {
-          // there should be no errors
-          should.not.exist(err);
-          // there should be a 200 status code
-          res.status.should.equal(200);
-          // the response should be JSON
-          res.type.should.equal('application/json');
-          // the JSON response body should have a
-          // key-value pair of {"status": "success"}
-          res.body.status.should.eql('success');
-          // the JSON response body should have a
-          // key-value pair of {"data": [3 movie objects]}
-          res.body.data.length.should.eql(3);
-          // the first object in the data array should
-          // have the right keys
-          res.body.data[0].should.include.keys('id', 'name', 'genre', 'rating', 'explicit');
-          done();
+      getRandomEntry('movies')
+        .then(({ movie, count }) => {
+          chai.request(server)
+            .get('/api/v1/movies')
+            .end((err, res) => {
+              should.not.exist(err);
+              // there should be a 200 status code
+              res.status.should.equal(200);
+              // the response should be JSON
+              res.type.should.equal('application/json');
+              // the JSON response body should have a
+              // key-value pair of {"status": "success"}
+              res.body.status.should.eql('success');
+              // the JSON response body should have a
+              // key-value pair of {"data": [3 movie objects]}
+              res.body.data.length.should.eql(count * 1);
+              // the first object in the data array should
+              // have the right keys
+              res.body.data[0].should.include.keys('id', 'title', 'genre', 'time', 'licensing', 'original', 'popularity');
+              done();
+            });
         });
     });
   });
@@ -71,7 +72,7 @@ describe('routes : movies', () => {
           res.body.status.should.eql('success');
           // the JSON response body should have a
           // key-value pair of {"data": 1 movie object}
-          res.body.data[0].should.include.keys('id', 'name', 'genre', 'rating', 'explicit');
+          res.body.data[0].should.include.keys('id', 'title', 'genre', 'time', 'licensing', 'original', 'popularity');
           done();
         });
     });
@@ -93,17 +94,19 @@ describe('routes : movies', () => {
       chai.request(server)
         .post('/api/v1/movies')
         .send({
-          name: 'Titanic',
-          genre: 'Drama',
-          rating: 8,
-          explicit: true,
+          title: 'Titanic 2',
+          genre: JSON.stringify(['dramas', 'international', 'action']),
+          time: 555001,
+          licensing: JSON.stringify(['Africa', 'Europe', 'Australia']),
+          original: false,
+          popularity: 456,
         })
         .end((err, res) => {
           should.not.exist(err);
           res.status.should.equal(201);
           res.type.should.equal('application/json');
           res.body.status.should.eql('success');
-          res.body.data[0].should.include.keys('id', 'name', 'genre', 'rating', 'explicit');
+          res.body.data[0].should.include.keys('id', 'title', 'genre', 'time', 'licensing', 'original', 'popularity');
           done();
         });
     });
@@ -126,29 +129,29 @@ describe('routes : movies', () => {
   describe('PUT /api/v1/movies', () => {
     it('should return the movie that was updated', (done) => {
       getRandomEntry('movies')
-        .then((movie) => {
+        .then(({ movie, count }) => {
           const movieObject = movie[0];
           let newRating = 0;
-          // make sure the new rating is a valid rating number
-          if (movieObject.rating > 1) {
-            newRating = movieObject.rating - 1;
+          // make sure the new popularity is a valid popularity number
+          if (movieObject.popularity > 1) {
+            newRating = movieObject.popularity - 1;
           } else {
             newRating = 1;
           }
           chai.request(server)
             .put(`/api/v1/movies/${movieObject.id}`)
-          // update the rating by subtracting 1
+          // update the popularity by subtracting 1
             .send({
-              rating: newRating,
+              popularity: newRating,
             })
             .end((err, res) => {
               should.not.exist(err);
               res.status.should.equal(200);
               res.type.should.equal('application/json');
               res.body.status.should.eql('success');
-              res.body.data[0].should.include.keys('id', 'name', 'genre', 'rating', 'explicit');
+              res.body.data[0].should.include.keys('id', 'title', 'genre', 'time', 'licensing', 'original', 'popularity');
               const newMovieObject = res.body.data[0];
-              newMovieObject.rating.should.not.eql(movieObject.rating);
+              newMovieObject.popularity.should.not.eql(movieObject.popularity);
               done();
             });
         });
@@ -158,7 +161,7 @@ describe('routes : movies', () => {
       chai.request(server)
         .put('/api/v1/movies/9999999')
         .send({
-          rating: 9,
+          popularity: 9,
         })
         .end((err, res) => {
           should.exist(err);
@@ -172,11 +175,10 @@ describe('routes : movies', () => {
   });
   describe('DELETE /api/v1/movies/:id', () => {
     it('should return the movie that was deleted', (done) => {
-      knex('movies')
-        .select('*')
-        .then((movies) => {
-          const movieObject = movies[0];
-          const lengthBeforeDelete = movies.length;
+      getRandomEntry('movies')
+        .then(({ movie, count }) => {
+          const movieObject = movie[0];
+          const lengthBeforeDelete = count;
           chai.request(server)
             .delete(`/api/v1/movies/${movieObject.id}`)
             .end((err, res) => {
@@ -184,10 +186,10 @@ describe('routes : movies', () => {
               res.status.should.equal(200);
               res.type.should.equal('application/json');
               res.body.status.should.eql('success');
-              res.body.data[0].should.include.keys('id', 'name', 'genre', 'rating', 'explicit');
-              knex('movies').select('*')
-                .then((updatedMovies) => {
-                  updatedMovies.length.should.eql(lengthBeforeDelete - 1);
+              res.body.data[0].should.include.keys('id', 'title', 'genre', 'time', 'licensing', 'original', 'popularity');
+              getRandomEntry('movies')
+                .then(({ movie, count }) => {
+                  (count * 1).should.eql(lengthBeforeDelete - 1);
                   done();
                 });
             });
@@ -197,17 +199,10 @@ describe('routes : movies', () => {
       chai.request(server)
         .delete('/api/v1/movies/9999999')
         .end((err, res) => {
-        // there should an error
           should.exist(err);
-          // there should be a 404 status code
           res.status.should.equal(404);
-          // the response should be JSON
           res.type.should.equal('application/json');
-          // the JSON response body should have a
-          // key-value pair of {"status": "error"}
           res.body.status.should.eql('error');
-          // the JSON response body should have a
-          // key-value pair of {"message": "That movie does not exist."}
           res.body.message.should.eql('That movie does not exist.');
           done();
         });
@@ -221,7 +216,7 @@ describe('routes : movies', () => {
           should.not.exist(err);
           res.status.should.equal(200);
           res.body.status.should.eql('success');
-          res.body.data[0].should.include.keys('id', 'name', 'genre', 'rating', 'explicit');
+          res.body.data[0].should.include.keys('id', 'title', 'genre', 'time', 'licensing', 'original', 'popularity');
           done();
         });
     });
