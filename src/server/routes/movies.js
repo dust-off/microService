@@ -56,32 +56,22 @@ router.get(`${BASE_URL}/:id`, async (ctx) => {
 
 router.post(`${BASE_URL}`, async (ctx) => {
   try {
-    // const string = await worker.batchProccess(ctx.request.body);
-    // worker.batch(ctx.request.body)
-    //   .then((data) => {
-    //     console.log(data);
-    //   });
-    const movie = ctx.request.body.insert;
-    // text, params, callback
-    // console.log(string);
-    // const resposne = queries.batchQuery(string, [], (err, res) => {
-    //   console.log(err, res);
-    // });
-    // const movie = await queries.batchQuery(string);
-    // console.log('');
-    // console.log('test');
-    // console.log(knex('movies').count('*'));
-    //
-    // // console.log();
-    // // const movie = away .queries.addBatchMovies()
-    // console.log('returned to router @ 62', movie);
+    const movie = await worker.batchProccess(ctx.request.body);
+    // const movie = ctx.request.body.insert;
+    // const movie = string;
     if (movie.length) {
+      console.log('Something worked!!!');
+      console.log('    This is the ressult');
+      console.log(movie);
       ctx.status = 201;
       ctx.body = {
         status: 'success',
         data: movie,
       };
     } else {
+      console.log('??? Fail');
+      console.log('    This is the ressult');
+      console.log(movie);
       ctx.status = 400;
       ctx.body = {
         status: 'error',
@@ -89,7 +79,8 @@ router.post(`${BASE_URL}`, async (ctx) => {
       };
     }
   } catch (err) {
-    // console.log(err);
+    console.log('WTF why did the erver have an issue?');
+    console.log(err);
     serverError(ctx, err);
   }
 });

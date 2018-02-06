@@ -33,5 +33,8 @@ module.exports = {
     knex.batchInsert('movies', rows)
       .returning('*'),
 
+  // rawBatch: data =>
+  //   knex.
+
   // batchQuery: (text, params, callback) => pg.query(text, params, callback),
 };
