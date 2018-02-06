@@ -1,5 +1,6 @@
 const Router = require('koa-router');
 const queries = require('../db/queries/movies');
+const worker = require('../../workers/workers.js');
 
 const router = new Router();
 const BASE_URL = '/api/v1/movies';
@@ -55,7 +56,25 @@ router.get(`${BASE_URL}/:id`, async (ctx) => {
 
 router.post(`${BASE_URL}`, async (ctx) => {
   try {
-    const movie = await queries.addMovie(ctx.request.body);
+    // const string = await worker.batchProccess(ctx.request.body);
+    // worker.batch(ctx.request.body)
+    //   .then((data) => {
+    //     console.log(data);
+    //   });
+    const movie = ctx.request.body.insert;
+    // text, params, callback
+    // console.log(string);
+    // const resposne = queries.batchQuery(string, [], (err, res) => {
+    //   console.log(err, res);
+    // });
+    // const movie = await queries.batchQuery(string);
+    // console.log('');
+    // console.log('test');
+    // console.log(knex('movies').count('*'));
+    //
+    // // console.log();
+    // // const movie = away .queries.addBatchMovies()
+    // console.log('returned to router @ 62', movie);
     if (movie.length) {
       ctx.status = 201;
       ctx.body = {
@@ -70,6 +89,7 @@ router.post(`${BASE_URL}`, async (ctx) => {
       };
     }
   } catch (err) {
+    // console.log(err);
     serverError(ctx, err);
   }
 });
@@ -112,6 +132,5 @@ router.get(`${BASE_URL}/search/:title`, async (ctx) => {
     serverError(ctx, err);
   }
 });
-
 
 module.exports = router;

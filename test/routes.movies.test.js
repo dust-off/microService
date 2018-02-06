@@ -12,6 +12,27 @@ const BASE_URL = '/api/v1/movies';
 const server = require('../src/server/index');
 const knex = require('../src/server/db/connection');
 
+const twoNewMovie = {
+  insert: [
+    {
+      title: 'Titanic 2',
+      genre: JSON.stringify(['dramas', 'international', 'action']),
+      time: 555001,
+      licensing: JSON.stringify(['Africa', 'Europe', 'Australia']),
+      original: false,
+      popularity: 456,
+    },
+    {
+      title: 'John Wick',
+      genre: JSON.stringify(['dramas', 'international', 'action', 'romance', 'docuseries']),
+      time: 555001,
+      licensing: JSON.stringify(['North America', 'Australia']),
+      original: false,
+      popularity: 456,
+    },
+  ],
+};
+
 const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min) + min);
 
 const getRandomEntry = dbTitle => new Promise((resolve) => {
@@ -92,23 +113,17 @@ describe('routes : movies', () => {
     });
   });
   describe('POST /api/v1/movies/', () => {
-    it('should insert a movie into the db', (done) => {
+    it('should insert a movie list into the db', (done) => {
       chai.request(server)
         .post(`${BASE_URL}`)
-        .send({
-          title: 'Titanic 2',
-          genre: JSON.stringify(['dramas', 'international', 'action']),
-          time: 555001,
-          licensing: JSON.stringify(['Africa', 'Europe', 'Australia']),
-          original: false,
-          popularity: 456,
-        })
+        .send(twoNewMovie)
         .end((err, res) => {
           should.not.exist(err);
           res.status.should.equal(201);
           res.type.should.equal('application/json');
           res.body.status.should.eql('success');
           res.body.data[0].should.include.keys('id', 'title', 'genre', 'time', 'licensing', 'original', 'popularity');
+          res.body.data.length.should.equal(2);
           done();
         });
     });

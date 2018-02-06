@@ -1,4 +1,5 @@
 const knex = require('../connection');
+// const pg = require('./pg.js');
 
 module.exports = {
   getAllMovies: () => knex('movies')
@@ -27,7 +28,10 @@ module.exports = {
     .orderBy('time', 'ASC')
     .limit(100)
     .returning('*'),
+
+  addBatchMovies: rows =>
+    knex.batchInsert('movies', rows)
+      .returning('*'),
+
+  // batchQuery: (text, params, callback) => pg.query(text, params, callback),
 };
-
-
-// SELECT * FROM items WHERE title LIKE '%some%' ORDER BY time ASC limit 100;
