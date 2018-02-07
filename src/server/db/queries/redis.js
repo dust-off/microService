@@ -1,7 +1,20 @@
-/*
+// const redis = require('redis');
+//
+// const redisClient = redis.createClient({ host: 'localhost', port: 6379 });
+//
+// redisClient.on('ready', () => {
+//   console.log('Redis is ready');
+// });
+//
+// redisClient.on('error', () => {
+//   console.log('Error in Redis');
+// });
+
+/* ------------- OG redis stuff ------------- */
+
 const redis = require('redis');
-const fakeData = require('../../../../__old/db/load/fakeLies.js');
-const redis_scanner = require('redis-scanner');
+// const fakeData = require('../../../../__old/db/load/fakeLies.js');
+// const redis_scanner = require('redis-scanner');
 
 const client = redis.createClient();
 const { promisify } = require('util');
@@ -12,7 +25,7 @@ const hgetallAsync = promisify(client.hgetall).bind(client);
 
 // var client = redis.createClient();
 
-redis_scanner.bindScanners(client);
+// redis_scanner.bindScanners(client);
 
 
 client.on('connect', () => {
@@ -22,6 +35,35 @@ client.on('error', (err) => {
   console.log(`Error ${err}`);
 });
 
+
+// NOTE - basic Hash
+hmsetAsync('tools', 'key1', 'data1', 'key2', 'data2', 'key3', 'data3')
+  .then((err, reply) => {
+    console.log(err);
+    console.log(reply);
+  });
+
+// NOTE - fetch the basic Hash
+hgetallAsync('tools')
+  .then((err, reply) => {
+    console.log(err);
+    console.log(reply);
+  });
+
+// NOTE - LIST
+redisClient.rpush(['languages', 'angularjs', 'nodejs', 'go'], (err, reply) => {
+  console.log(err);
+  console.log(reply);
+});
+// NOTE - SET
+redisClient.sadd(['devopstools', 'jenkins', 'codeship', 'jenkins'], (err, reply) => {
+  console.log(err);
+  console.log(reply);
+});
+
+
+/* ------------- insert fake data ------------- */
+// NOTE - fix fakeData link
 const stashData = count => new Promise((resolve) => {
   // client.flushall();
   // hgetallAsync('moives')
@@ -60,6 +102,8 @@ const stashData = count => new Promise((resolve) => {
 
 // stashData(500000);
 
+/* ----------- myFunc is called below this ----------- */
+// NOTE - old code but keep it around for now
 const myFunc = () => {
   client.dbsize((err, numKeys) => { console.log('@', Date.now(), 'Data Set = ', numKeys); });
   const start = Date.now();
@@ -99,7 +143,7 @@ const myFunc = () => {
   // // .catch(err => console.log('inserting movie failed', err));
 };
 
-myFunc();
+// myFunc();
 
 
 // With the code bellow you will scan the 1000 first object from cursor 0
@@ -134,4 +178,3 @@ myFunc();
 //     }
 //   })
 // }
-*/

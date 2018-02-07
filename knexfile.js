@@ -15,7 +15,7 @@ module.exports = {
   },
   development: {
     client: 'pg',
-    connection: 'postgres://dustinburns@localhost:5432/koa_api',
+    connection: 'postgres://dustinburns@localhost:5432/flix_v1',
     migrations: {
       directory: path.join(BASE_PATH, 'migrations'),
     },

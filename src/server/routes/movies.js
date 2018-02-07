@@ -54,24 +54,16 @@ router.get(`${BASE_URL}/:id`, async (ctx) => {
   }
 });
 
-router.post(`${BASE_URL}`, async (ctx) => {
+router.post(`${BASE_URL}/updates`, async (ctx) => {
   try {
-    const movie = await worker.batchProccess(ctx.request.body);
-    // const movie = ctx.request.body.insert;
-    // const movie = string;
-    if (movie.length) {
-      console.log('Something worked!!!');
-      console.log('    This is the ressult');
-      console.log(movie);
+    const dbRes = await worker.batchProccess(ctx.request.body);
+    if (dbRes.rowCount) {
       ctx.status = 201;
       ctx.body = {
         status: 'success',
-        data: movie,
+        data: { command: dbRes.command, rowCount: dbRes.rowCount },
       };
     } else {
-      console.log('??? Fail');
-      console.log('    This is the ressult');
-      console.log(movie);
       ctx.status = 400;
       ctx.body = {
         status: 'error',
@@ -79,8 +71,6 @@ router.post(`${BASE_URL}`, async (ctx) => {
       };
     }
   } catch (err) {
-    console.log('WTF why did the erver have an issue?');
-    console.log(err);
     serverError(ctx, err);
   }
 });

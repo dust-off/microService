@@ -1,7 +1,4 @@
 const environment = process.env.NODE_ENV || 'development';
-// const path = require('path');
-
-// const BASE_PATH = path.join(__dirname, 'src', 'server', 'db');
 
 const pgConnect = {
   test: {
@@ -22,43 +19,27 @@ const pgConnect = {
   },
 };
 
-// const pg = require('pg');
-//
-// const onConnect = (err, client, done) => {
-//   if (err) {
-//     console.error(err);
-//     process.exit(1);
-//   }
-//   client.end();
-// };
-//
-// pg.connect(pgConnect[environment], onConnect);
-
-//--------
-import PgAsync from 'pg-async';
-
-// using default connection
-const pgAsync = new PgAsync();
-
-// using connection string
-// const pgAsync = new PgAsync('postgres://user:secret@host:port/database');
-
-// using connection object
-const pgAsync = new PgAsync(pgConnect[environment]);
-//----------
-
+/* -------------- direct PG -------------- */
 const { Pool } = require('pg');
 
 const pool = new Pool(pgConnect[environment]);
 
 module.exports = {
-  query: (text, params, callback) => {
-    const start = Date.now();
-    return pool.query(text, params, (err, res) => {
-      const duration = Date.now() - start;
-      console.log('executed query', { text, params, duration });
-      // console.log('executed query', duration)
-      callback(err, res);
-    });
+  query: async (q) => {
+    const client = await pool.connect();
+    let res;
+    try {
+      await client.query('BEGIN');
+      try {
+        res = await client.query(q);
+        await client.query('COMMIT');
+      } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+      }
+    } finally {
+      client.release();
+    }
+    return res;
   },
 };
