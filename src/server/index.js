@@ -15,8 +15,8 @@ const server = app.listen(PORT, () => {
   console.log(`Server listening on port: ${PORT}`);
 });
 
-console.log('');
-console.log('process.env');
-console.log(process.env);
+// console.log('');
+// console.log('process.env');
+// console.log(process.env);
 
 module.exports = server;

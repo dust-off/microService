@@ -43,7 +43,8 @@ const serverError = (ctx, err) => {
 
 router.get(`${BASE_URL}/:id`, async (ctx) => {
   try {
-    const movie = await queries.getSingleMovie(ctx.params.id);
+    // const movie = await queries.getSingleMovie(ctx.params.id);
+    const movie = await worker.getSingleMovie(ctx.params.id);
     if (movie.length) {
       sendMovie(ctx, movie);
     } else {

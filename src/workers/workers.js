@@ -1,6 +1,7 @@
 const queries = require('../server/db/queries/movies');
 // const knex = require('../server/db/connection.js');
 const db = require('../server/db/queries/pg.js');
+const redis = require('../server/db/queries/redis.js');
 
 // const bulkUpdate = (records) => {
 //   queries.addBatchMovies(records)
@@ -74,6 +75,20 @@ module.exports = {
       console.log('Catch in Worker.js @ 38');
       console.log(`    *Database ${err}`);
     }
+  },
+  getSingleMovie: async (id) => {
+    const redLook = await redis.cacheGet(id);
+    if (redLook === null) {
+      console.log('inside the if statement because redLook.length', redLook);
+      // console.log(redLook);
+      const queryArray = `SELECT * FROM movies WHERE id = ${id}`;
+      const results = await db.query(queryArray);
+      // console.log(results.rows);
+      redis.cacheSave(results.rows[0]);
+      return results.rows;
+    }
+    // console.log('its returning the error');
+    return redLook;
   },
 };
 
