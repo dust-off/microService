@@ -1,0 +1,9 @@
+config:
+  target: 'http://localhost:1337'
+  phases:
+    - duration: 60
+      arrivalCount: 20
+scenarios:
+  - flow:
+    - get:
+        url: "/api/v1/movies/2"

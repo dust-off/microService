@@ -1,3 +1,4 @@
+/* --------------- setUP --------------- */
 process.env.NODE_ENV = 'test';
 
 const chai = require('chai');
@@ -12,6 +13,8 @@ const BASE_URL = '/api/v1/movies';
 const server = require('../src/server/index');
 const knex = require('../src/server/db/connection');
 
+
+/* --------------- Helpers --------------- */
 const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min) + min);
 
 const getRandomEntry = dbTitle => new Promise((resolve) => {
@@ -25,6 +28,50 @@ const getRandomEntry = dbTitle => new Promise((resolve) => {
     });
 });
 
+/* --------------- OBJECTS --------------- */
+const addTwoMovies = {
+  insert: [
+    {
+      title: 'Titanic 2',
+      genre: JSON.stringify(['dramas', 'international', 'action']),
+      time: 555001,
+      licensing: JSON.stringify(['Africa', 'Europe', 'Australia']),
+      original: false,
+      popularity: 456,
+    },
+    {
+      title: 'John Wick',
+      genre: JSON.stringify(['dramas', 'international', 'action', 'romance', 'docuseries']),
+      time: 555001,
+      licensing: JSON.stringify(['North America', 'Australia']),
+      original: false,
+      popularity: 456,
+    },
+  ],
+};
+
+const makeDeleteMovies = () => new Promise((resolve) => {
+  // getRandomEntry('movies').then(({ movie, count }) => { console.log(movie); });
+  // console.log('THING');
+  knex('movies')
+    .where('id', 1)
+    .then((movie1) => {
+      const stringy = JSON.stringify(movie1);
+      const first = JSON.parse(stringy);
+      knex('movies')
+        .where('id', 2)
+        .then((movie2) => {
+          const stringy2 = JSON.stringify(movie2);
+          const second = JSON.parse(stringy2);
+          resolve({
+            remove: [first[0], second[0]],
+          });
+          // resolve('test');
+        });
+    });
+});
+
+/* --------------- TESTS --------------- */
 describe('routes : movies', () => {
   beforeEach(() => knex.migrate.rollback()
     .then(() => knex.migrate.latest())
@@ -63,17 +110,10 @@ describe('routes : movies', () => {
       chai.request(server)
         .get(`${BASE_URL}/1`)
         .end((err, res) => {
-          // there should be no errors
           should.not.exist(err);
-          // there should be a 200 status code
           res.status.should.equal(200);
-          // the response should be JSON
           res.type.should.equal('application/json');
-          // the JSON response body should have a
-          // key-value pair of {"status": "success"}
           res.body.status.should.eql('success');
-          // the JSON response body should have a
-          // key-value pair of {"data": 1 movie object}
           res.body.data[0].should.include.keys('id', 'title', 'genre', 'time', 'licensing', 'original', 'popularity');
           done();
         });
@@ -87,43 +127,6 @@ describe('routes : movies', () => {
           res.type.should.equal('application/json');
           res.body.status.should.eql('error');
           res.body.message.should.eql('That movie does not exist.');
-          done();
-        });
-    });
-  });
-  describe('POST /api/v1/movies/', () => {
-    it('should insert a movie into the db', (done) => {
-      chai.request(server)
-        .post(`${BASE_URL}`)
-        .send({
-          title: 'Titanic 2',
-          genre: JSON.stringify(['dramas', 'international', 'action']),
-          time: 555001,
-          licensing: JSON.stringify(['Africa', 'Europe', 'Australia']),
-          original: false,
-          popularity: 456,
-        })
-        .end((err, res) => {
-          should.not.exist(err);
-          res.status.should.equal(201);
-          res.type.should.equal('application/json');
-          res.body.status.should.eql('success');
-          res.body.data[0].should.include.keys('id', 'title', 'genre', 'time', 'licensing', 'original', 'popularity');
-          done();
-        });
-    });
-    it('should throw an error if the payload is malformed', (done) => {
-      chai.request(server)
-        .post(`${BASE_URL}`)
-        .send({
-          name: 'Titanic',
-        })
-        .end((err, res) => {
-          should.exist(err);
-          res.status.should.equal(400);
-          res.type.should.equal('application/json');
-          res.body.status.should.eql('error');
-          should.exist(res.body.message);
           done();
         });
     });
@@ -231,6 +234,88 @@ describe('routes : movies', () => {
           res.status.should.equal(404);
           res.type.should.equal('application/json');
           res.body.message.should.eql('That movie does not exist.');
+          done();
+        });
+    });
+  });
+  describe('MASS POST /api/v1/movies/updates', () => {
+    it('should insert a movie list into the db', (done) => {
+      getRandomEntry('movies')
+        .then(({ movie, count }) => {
+          const countBefore = (count * 1);
+          chai.request(server)
+            .post(`${BASE_URL}/updates`)
+            .send(addTwoMovies)
+            .end((err, res) => {
+              should.not.exist(err);
+              res.status.should.equal(201);
+              res.type.should.equal('application/json');
+              res.body.status.should.eql('success');
+              res.body.data.should.include.keys('command', 'rowCount');
+              res.body.data.rowCount.should.equal(2);
+              getRandomEntry('movies')
+                .then(({ movie, count }) => {
+                  (count * 1).should.eql(countBefore + 2);
+                  done();
+                });
+            });
+        });
+    });
+    it('should throw an error if the payload is malformed', (done) => {
+      chai.request(server)
+        .post(`${BASE_URL}/updates`)
+        .send({
+          name: 'Titanic',
+        })
+        .end((err, res) => {
+          should.exist(err);
+          res.status.should.equal(400);
+          res.type.should.equal('application/json');
+          res.body.status.should.eql('error');
+          should.exist(res.body.message);
+          done();
+        });
+    });
+  });
+  describe('MASS DELETE /api/v1/movies/updates', () => {
+    it('should insert a movie list into the db', (done) => {
+      makeDeleteMovies()
+        .then((deleteObj) => {
+          console.log(deleteObj);
+          getRandomEntry('movies')
+            .then(({ movie, count }) => {
+              const countBefore = (count * 1);
+              chai.request(server)
+                .post(`${BASE_URL}/updates`)
+                .send(deleteObj)
+                .end((err, res) => {
+                  should.not.exist(err);
+                  res.status.should.equal(201);
+                  res.type.should.equal('application/json');
+                  res.body.status.should.eql('success');
+                  res.body.data.should.include.keys('command', 'rowCount');
+                  res.body.data.rowCount.should.equal(2);
+                  getRandomEntry('movies')
+                    .then(({ movie, count }) => {
+                      (count * 1).should.eql(countBefore + 2);
+                      done();
+                    });
+                });
+            });
+        });
+    });
+    it('should throw an error if the payload is malformed', (done) => {
+      chai.request(server)
+        .post(`${BASE_URL}/updates`)
+        .send({
+          name: 'Titanic',
+        })
+        .end((err, res) => {
+          should.exist(err);
+          res.status.should.equal(400);
+          res.type.should.equal('application/json');
+          res.body.status.should.eql('error');
+          should.exist(res.body.message);
           done();
         });
     });

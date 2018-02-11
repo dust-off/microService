@@ -1,5 +1,6 @@
 const Router = require('koa-router');
 const queries = require('../db/queries/movies');
+const worker = require('../../workers/workers.js');
 
 const router = new Router();
 const BASE_URL = '/api/v1/movies';
@@ -42,7 +43,8 @@ const serverError = (ctx, err) => {
 
 router.get(`${BASE_URL}/:id`, async (ctx) => {
   try {
-    const movie = await queries.getSingleMovie(ctx.params.id);
+    // const movie = await queries.getSingleMovie(ctx.params.id);
+    const movie = await worker.getSingleMovie(ctx.params.id);
     if (movie.length) {
       sendMovie(ctx, movie);
     } else {
@@ -53,14 +55,14 @@ router.get(`${BASE_URL}/:id`, async (ctx) => {
   }
 });
 
-router.post(`${BASE_URL}`, async (ctx) => {
+router.post(`${BASE_URL}/updates`, async (ctx) => {
   try {
-    const movie = await queries.addMovie(ctx.request.body);
-    if (movie.length) {
+    const dbRes = await worker.batchProccess(ctx.request.body);
+    if (dbRes.rowCount) {
       ctx.status = 201;
       ctx.body = {
         status: 'success',
-        data: movie,
+        data: { command: dbRes.command, rowCount: dbRes.rowCount },
       };
     } else {
       ctx.status = 400;
@@ -112,6 +114,5 @@ router.get(`${BASE_URL}/search/:title`, async (ctx) => {
     serverError(ctx, err);
   }
 });
-
 
 module.exports = router;

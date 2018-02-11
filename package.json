@@ -27,7 +27,9 @@
     "koa": "^2.4.1",
     "koa-bodyparser": "^4.2.0",
     "koa-router": "^7.4.0",
+    "newrelic": "^2.7.0",
     "pg": "^7.4.1",
+    "pg-async": "^3.1.0",
     "redis": "^2.8.0",
     "redis-scanner": "^0.1.1"
   }
